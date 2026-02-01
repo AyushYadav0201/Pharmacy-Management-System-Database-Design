@@ -108,10 +108,6 @@ Role-based access control ensures secure and restricted access to sensitive data
   * Access to inventory and stock updates
   * Restricted from billing and payment details
 
----
-
-Here’s a clean, professional **README** that ties everything together nicely and feels ready for a project repo 👇
-(You can paste this straight into `README.md`.)
 
 ---
 
