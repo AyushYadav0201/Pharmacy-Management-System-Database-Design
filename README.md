@@ -110,29 +110,150 @@ Role-based access control ensures secure and restricted access to sensitive data
 
 ---
 
+Here’s a clean, professional **README** that ties everything together nicely and feels ready for a project repo 👇
+(You can paste this straight into `README.md`.)
+
+---
+
 ## 📊 Views & Reports
 
-The system includes analytical views to support business decisions:
+This module provides a set of **database views and analytical reports** designed to support operational monitoring, strategic planning, and business decision-making.
+By abstracting complex joins and calculations into reusable SQL views, the system improves **data accessibility, performance, and usability** for stakeholders.
 
 ### 1️⃣ Low Inventory Drugs
 
-Identifies drugs below threshold levels to prevent stockouts.
+**Objective**
+Identify drugs whose inventory levels have fallen below their defined threshold.
+
+**Business Justification**
+Early identification of low-stock drugs prevents stockouts, ensures uninterrupted service, and improves customer satisfaction.
+
+**View Definition**
+
+```sql
+CREATE OR REPLACE VIEW Low_Inventory_Drugs AS
+SELECT DRUG_ID,
+       DRUG_NAME,
+       MANUFACTURER,
+       INV_QUANTITY,
+       THRESHOLD_QUANTITY
+FROM INVENTORY
+WHERE INV_QUANTITY < THRESHOLD_QUANTITY
+ORDER BY INV_QUANTITY ASC;
+```
+
+---
 
 ### 2️⃣ Top 5 Customers by Order Value
 
-Highlights high-value customers for loyalty and marketing strategies.
+**Objective**
+Identify the top five customers based on cumulative order value.
+
+**Business Justification**
+Recognizing high-value customers enables targeted marketing, personalized promotions, and loyalty program optimization.
+
+**View Definition**
+
+```sql
+CREATE OR REPLACE VIEW Top_5_Customers_By_Order_Value AS
+SELECT c.CUSTOMER_ID,
+       c.FIRST_NAME,
+       c.LAST_NAME,
+       SUM(pb.TOTAL_AMOUNT) AS TOTAL_ORDER_VALUE
+FROM CUSTOMER c
+JOIN PRESCRIPTION p ON c.CUSTOMER_ID = p.CUSTOMER_ID
+JOIN ORDER_BILL ob ON p.PRES_ID = ob.PRES_ID
+JOIN PAYMENT_BILL pb ON ob.ORDER_ID = pb.ORDER_ID
+GROUP BY c.CUSTOMER_ID, c.FIRST_NAME, c.LAST_NAME, c.CITY
+ORDER BY TOTAL_ORDER_VALUE DESC
+FETCH FIRST 5 ROWS ONLY;
+```
+
+---
 
 ### 3️⃣ Employee Duration and Salary
 
-Displays employee tenure and compensation details.
+**Objective**
+Display employee tenure, role, and salary details.
+
+**Business Justification**
+Understanding employee duration and compensation supports workforce planning, performance reviews, and fair remuneration strategies.
+
+**View Definition**
+
+```sql
+CREATE OR REPLACE VIEW EMPLOYEE_VIEW AS
+SELECT E.FIRST_NAME,
+       E.LAST_NAME,
+       R.ROLE_NAME,
+       E.SALARY,
+       TRUNC(MONTHS_BETWEEN(NVL(E.END_DATE, SYSDATE), E.START_DATE) / 12)
+       || '&' ||
+       MOD(TRUNC(MONTHS_BETWEEN(NVL(E.END_DATE, SYSDATE), E.START_DATE)), 12)
+       AS YEARS_MONTHS_WORKED
+FROM EMPLOYEE E
+JOIN ROLE R
+ON E.ROLE_ID = R.ROLE_ID;
+```
+
+---
 
 ### 4️⃣ Customers with Maximum Orders
 
-Identifies frequent customers to support retention strategies.
+**Objective**
+Identify customers who have placed the highest number of orders.
+
+**Business Justification**
+Frequent customers are ideal candidates for retention strategies, loyalty rewards, and personalized engagement campaigns.
+
+**View Definition**
+
+```sql
+CREATE OR REPLACE VIEW Customers_With_Max_Orders AS
+SELECT c.CUSTOMER_ID,
+       c.FIRST_NAME,
+       c.LAST_NAME,
+       c.CITY,
+       COUNT(p.PRES_ID) AS NUM_ORDERS
+FROM CUSTOMER c
+JOIN PRESCRIPTION p ON c.CUSTOMER_ID = p.CUSTOMER_ID
+JOIN ORDER_BILL ob ON p.PRES_ID = ob.PRES_ID
+GROUP BY c.CUSTOMER_ID, c.FIRST_NAME, c.LAST_NAME, c.CITY
+HAVING COUNT(p.PRES_ID) = (
+    SELECT MAX(order_count)
+    FROM (
+        SELECT COUNT(p.PRES_ID) AS order_count
+        FROM PRESCRIPTION p
+        GROUP BY p.CUSTOMER_ID
+    )
+)
+ORDER BY NUM_ORDERS DESC;
+```
+
+---
 
 ### 5️⃣ Top Performing Employees by Sales
 
-Ranks employees based on generated sales revenue.
+**Objective**
+Rank employees based on the total sales revenue they have generated.
+
+**Business Justification**
+Highlighting high-performing employees supports incentive programs, performance evaluations, and sales strategy optimization.
+
+**View Definition**
+
+```sql
+CREATE OR REPLACE VIEW Employee_Sales_Summary AS
+SELECT e.EMP_ID,
+       e.FIRST_NAME,
+       e.LAST_NAME,
+       SUM(pb.TOTAL_AMOUNT) AS TOTAL_SALES_AMOUNT
+FROM EMPLOYEE e
+JOIN ORDER_BILL ob ON e.EMP_ID = ob.EMP_ID
+JOIN PAYMENT_BILL pb ON ob.ORDER_ID = pb.ORDER_ID
+GROUP BY e.EMP_ID, e.FIRST_NAME, e.LAST_NAME
+ORDER BY TOTAL_SALES_AMOUNT DESC;
+```
 
 ---
 
